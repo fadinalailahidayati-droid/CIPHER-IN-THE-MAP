@@ -92,114 +92,124 @@ def rail_fence_decrypt(text, rails):
     
     return ''.join(result)
 
-# ========== TABEL SIMBOL ==========
+# ========== FUNGSI KONVERSI SIMBOL ==========
 
-def create_symbol_table():
+def text_to_symbols(text):
     """
-    Membuat tabel simbol berdasarkan data dari PDF
+    Mengonversi teks menjadi simbol berdasarkan tabel
     """
-    symbols_data = {
-        'Alphabet': ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 
-                    'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'],
-        'Simbol': ['●', '△', '□', '▽', '~ ~', '~~~', '◆', '♡', '○', '- - - -', '◆', 
-                  '~ ~ ~ ~', '□', '▲', '====', '▶', '◇', '◎', '+', '+', '+', '☉', '○', '×', '○', '☉☉☉☉'],
-        'Deskripsi': ['Kota Besar', 'Gunung Non Aktif', 'Dataran Rendah', 'Lembah', 'Sungai', 
-                     'Jalan Raya', 'Hutan', 'Pelabuhan', 'Danau', 'Rel Kereta Api', 'Pertambangan',
-                     'Pantai', 'Pemukiman', 'Gunung Aktif', 'Batas Negara', 'Bendungan', 
-                     'Air Terjun', 'Rawa', 'Rumah Sakit', 'Bandara', 'Tempat Ibadah', 
-                     'Kantor Pos', 'Sumur', 'Daerah Berbahaya', 'Ibu Kota Negara', 'Laut']
+    # Tabel konversi huruf ke simbol
+    symbol_map = {
+        'A': '●', 'B': '△', 'C': '□', 'D': '▽', 'E': '~ ~',
+        'F': '~~~', 'G': '◆', 'H': '♡', 'I': '○', 'J': '- - - -',
+        'K': '◆', 'L': '~ ~ ~ ~', 'M': '□', 'N': '▲', 'O': '====',
+        'P': '▶', 'Q': '◇', 'R': '◎', 'S': '+', 'T': '+',
+        'U': '+', 'V': '☉', 'W': '○', 'X': '×', 'Y': '○', 'Z': '☉☉☉☉'
     }
     
-    return pd.DataFrame(symbols_data)
+    result = ""
+    for char in text.upper():
+        if char in symbol_map:
+            result += symbol_map[char] + " "
+        elif char == " ":
+            result += "  "
+        else:
+            result += char + " "
+    
+    return result.strip()
+
+def symbols_to_text(symbols):
+    """
+    Mengonversi simbol kembali menjadi teks
+    """
+    # Tabel konversi simbol ke huruf
+    text_map = {
+        '●': 'A', '△': 'B', '□': 'C', '▽': 'D', '~ ~': 'E',
+        '~~~': 'F', '◆': 'G', '♡': 'H', '○': 'I', '- - - -': 'J',
+        '◆': 'K', '~ ~ ~ ~': 'L', '□': 'M', '▲': 'N', '====': 'O',
+        '▶': 'P', '◇': 'Q', '◎': 'R', '+': 'S', '+': 'T',
+        '+': 'U', '☉': 'V', '○': 'W', '×': 'X', '○': 'Y', '☉☉☉☉': 'Z'
+    }
+    
+    # Pisahkan simbol (perhatikan bahwa beberapa simbol memiliki spasi)
+    symbols_list = symbols.split()
+    result = ""
+    
+    i = 0
+    while i < len(symbols_list):
+        symbol = symbols_list[i]
+        
+        # Cek simbol multi-token
+        if symbol == '~' and i + 1 < len(symbols_list):
+            if symbols_list[i + 1] == '~':
+                symbol = '~ ~'
+                i += 1
+        elif symbol == '~~~':
+            # Sudah benar
+            pass
+        elif symbol == '~' and i + 3 < len(symbols_list):
+            if symbols_list[i + 1] == '~' and symbols_list[i + 2] == '~' and symbols_list[i + 3] == '~':
+                symbol = '~ ~ ~ ~'
+                i += 3
+        elif symbol == '-' and i + 3 < len(symbols_list):
+            if symbols_list[i + 1] == '-' and symbols_list[i + 2] == '-' and symbols_list[i + 3] == '-':
+                symbol = '- - - -'
+                i += 3
+        elif symbol == '=' and i + 3 < len(symbols_list):
+            if symbols_list[i + 1] == '=' and symbols_list[i + 2] == '=' and symbols_list[i + 3] == '=':
+                symbol = '===='
+                i += 3
+        elif symbol == '☉' and i + 3 < len(symbols_list):
+            if symbols_list[i + 1] == '☉' and symbols_list[i + 2] == '☉' and symbols_list[i + 3] == '☉':
+                symbol = '☉☉☉☉'
+                i += 3
+        
+        if symbol in text_map:
+            result += text_map[symbol]
+        elif symbol == "":
+            result += " "
+        else:
+            result += symbol
+        
+        i += 1
+    
+    return result
 
 # ========== ANTARMUKA STREAMLIT ==========
 
 def main():
     # Konfigurasi halaman
     st.set_page_config(
-        page_title="Aplikasi Kriptografi",
+        page_title="Aplikasi Kriptografi Simbol",
         page_icon="🔐",
         layout="wide"
     )
     
     # Judul aplikasi
-    st.title("🔐 Aplikasi Kriptografi: Rail Cipher & Caesar Cipher")
+    st.title("🔐 Aplikasi Kriptografi dengan Simbol")
     st.markdown("---")
     
-    # Sidebar untuk navigasi
+    # Sidebar untuk navigasi (hanya 2 menu)
     st.sidebar.title("Navigasi")
     app_mode = st.sidebar.radio(
         "Pilih Menu:",
-        ["Beranda", "Caesar Cipher", "Rail Fence Cipher", "Tabel Simbol", "Tentang"]
+        ["Caesar Cipher", "Rail Fence Cipher"]
     )
     
-    # ========== HALAMAN BERANDA ==========
-    if app_mode == "Beranda":
-        st.header("Selamat Datang di Aplikasi Kriptografi")
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.subheader("Caesar Cipher")
-            st.markdown("""
-            **Penjelasan:**
-            - Metode substitusi sederhana
-            - Menggeser setiap huruf sejauh 3 posisi (default)
-            - Ditemukan oleh Julius Caesar
-            """)
-            
-            st.info("""
-            **Contoh:**
-            - Plaintext: HELLO
-            - Key: 3
-            - Ciphertext: KHOOR
-            """)
-        
-        with col2:
-            st.subheader("Rail Fence Cipher")
-            st.markdown("""
-            **Penjelasan:**
-            - Metode transposisi
-            - Menulis teks dalam pola zig-zag
-            - Membaca per baris untuk menghasilkan ciphertext
-            """)
-            
-            st.info("""
-            **Contoh:**
-            - Plaintext: HELLO WORLD
-            - Rails: 3
-            - Ciphertext: HOREL OLWLD
-            """)
-        
-        st.markdown("---")
-        st.subheader("Cara Penggunaan")
-        st.write("1. Pilih menu di sidebar")
-        st.write("2. Untuk Caesar Cipher: masukkan teks dan pilih enkripsi/dekripsi")
-        st.write("3. Untuk Rail Fence Cipher: masukkan teks dan jumlah rail")
-        st.write("4. Untuk Tabel Simbol: lihat kode simbol untuk setiap huruf")
-    
     # ========== HALAMAN CAESAR CIPHER ==========
-    elif app_mode == "Caesar Cipher":
-        st.header("Caesar Cipher")
+    if app_mode == "Caesar Cipher":
+        st.header("Caesar Cipher dengan Simbol")
         
-        # Penjelasan
+        # Penjelasan singkat
         with st.expander("📖 Tentang Caesar Cipher"):
             st.markdown("""
-            **Caesar Cipher** adalah salah satu teknik kriptografi tertua yang dikenal.
+            **Caesar Cipher** adalah teknik kriptografi kuno yang menggeser setiap huruf.
             
-            **Cara kerja:**
-            1. Setiap huruf pada plaintext digeser sejauh nilai key
-            2. Default key adalah 3 (seperti yang digunakan Julius Caesar)
-            3. Pergeseran dilakukan dalam alfabet (A-Z)
-            
-            **Rumus:**
-            - Enkripsi: C = (P + K) mod 26
-            - Dekripsi: P = (C - K) mod 26
-            
-            Dimana:
-            - C = Ciphertext
-            - P = Plaintext
-            - K = Key (nilai pergeseran)
+            **Hasil akan dikonversi menjadi simbol:**
+            - A → ● (Kota Besar)
+            - B → △ (Gunung Non Aktif)
+            - C → □ (Dataran Rendah)
+            - ... dan seterusnya
             """)
         
         # Input pengguna
@@ -207,60 +217,119 @@ def main():
         
         with col1:
             text_input = st.text_area("Masukkan teks:", height=100, 
-                                      placeholder="Masukkan teks di sini...")
+                                      placeholder="Masukkan teks di sini...", key="caesar_input")
+            show_original = st.checkbox("Tampilkan teks asli", value=True)
         
         with col2:
             mode = st.radio("Pilih mode:", ["Enkripsi", "Dekripsi"])
             shift_key = st.slider("Pilih key (nilai pergeseran):", 
                                  min_value=1, max_value=25, value=3)
             
+            convert_symbols = st.checkbox("Konversi hasil ke simbol", value=True)
+            
             if st.button("🚀 Proses Caesar Cipher", use_container_width=True):
                 if text_input:
                     if mode == "Enkripsi":
-                        result = caesar_cipher(text_input, shift_key, 'encrypt')
+                        # Proses Caesar Cipher
+                        caesar_result = caesar_cipher(text_input, shift_key, 'encrypt')
+                        
+                        # Konversi ke simbol jika dipilih
+                        if convert_symbols:
+                            final_result = text_to_symbols(caesar_result)
+                        else:
+                            final_result = caesar_result
+                        
                         st.success("✅ Enkripsi Berhasil!")
                     else:
-                        result = caesar_cipher(text_input, shift_key, 'decrypt')
+                        # Untuk dekripsi, pertama konversi dari simbol jika perlu
+                        if convert_symbols:
+                            # Coba konversi dari simbol ke teks
+                            try:
+                                text_from_symbols = symbols_to_text(text_input)
+                                final_result = caesar_cipher(text_from_symbols, shift_key, 'decrypt')
+                            except:
+                                st.error("Gagal mengonversi simbol. Pastikan format simbol benar.")
+                                return
+                        else:
+                            final_result = caesar_cipher(text_input, shift_key, 'decrypt')
+                        
                         st.success("✅ Dekripsi Berhasil!")
                     
                     # Tampilkan hasil
-                    st.subheader("Hasil:")
-                    st.code(result, language="text")
+                    col_result1, col_result2 = st.columns(2)
+                    
+                    with col_result1:
+                        st.subheader("Hasil:")
+                        st.code(final_result, language="text")
+                    
+                    with col_result2:
+                        if show_original and mode == "Enkripsi":
+                            st.subheader("Teks Asli:")
+                            st.info(text_input)
+                        
+                        if convert_symbols:
+                            st.subheader("Keterangan:")
+                            st.caption("Hasil telah dikonversi ke dalam bentuk simbol")
+                    
+                    # Tampilkan tabel simbol kecil
+                    with st.expander("📋 Tabel Simbol Referensi"):
+                        symbols_data = {
+                            'Huruf': ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'],
+                            'Simbol': ['●', '△', '□', '▽', '~ ~', '~~~', '◆', '♡', '○', '- - - -', '◆'],
+                            'Deskripsi': ['Kota Besar', 'Gunung Non Aktif', 'Dataran Rendah', 'Lembah', 
+                                         'Sungai', 'Jalan Raya', 'Hutan', 'Pelabuhan', 'Danau', 
+                                         'Rel Kereta Api', 'Pertambangan']
+                        }
+                        
+                        symbols_data2 = {
+                            'Huruf': ['L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V'],
+                            'Simbol': ['~ ~ ~ ~', '□', '▲', '====', '▶', '◇', '◎', '+', '+', '+', '☉'],
+                            'Deskripsi': ['Pantai', 'Pemukiman', 'Gunung Aktif', 'Batas Negara', 
+                                         'Bendungan', 'Air Terjun', 'Rawa', 'Rumah Sakit', 
+                                         'Bandara', 'Tempat Ibadah', 'Kantor Pos']
+                        }
+                        
+                        symbols_data3 = {
+                            'Huruf': ['W', 'X', 'Y', 'Z'],
+                            'Simbol': ['○', '×', '○', '☉☉☉☉'],
+                            'Deskripsi': ['Sumur', 'Daerah Berbahaya', 'Ibu Kota Negara', 'Laut']
+                        }
+                        
+                        col_t1, col_t2, col_t3 = st.columns(3)
+                        with col_t1:
+                            st.dataframe(pd.DataFrame(symbols_data), hide_index=True, use_container_width=True)
+                        with col_t2:
+                            st.dataframe(pd.DataFrame(symbols_data2), hide_index=True, use_container_width=True)
+                        with col_t3:
+                            st.dataframe(pd.DataFrame(symbols_data3), hide_index=True, use_container_width=True)
+                
                 else:
                     st.warning("⚠️ Silakan masukkan teks terlebih dahulu!")
         
         # Contoh
-        with st.expander("📋 Contoh Caesar Cipher"):
-            example_text = "KRIPTOGRAFI"
+        with st.expander("📋 Contoh Caesar Cipher dengan Simbol"):
+            example_text = "HELLO"
             example_encrypted = caesar_cipher(example_text, 3, 'encrypt')
-            example_decrypted = caesar_cipher(example_encrypted, 3, 'decrypt')
+            example_symbols = text_to_symbols(example_encrypted)
             
             st.write(f"**Plaintext:** {example_text}")
             st.write(f"**Key:** 3")
-            st.write(f"**Ciphertext:** {example_encrypted}")
-            st.write(f"**Dekripsi kembali:** {example_decrypted}")
+            st.write(f"**Ciphertext (huruf):** {example_encrypted}")
+            st.write(f"**Ciphertext (simbol):** {example_symbols}")
+            st.write(f"**Dekripsi kembali:** {caesar_cipher(example_encrypted, 3, 'decrypt')}")
     
     # ========== HALAMAN RAIL FENCE CIPHER ==========
     elif app_mode == "Rail Fence Cipher":
-        st.header("Rail Fence Cipher")
+        st.header("Rail Fence Cipher dengan Simbol")
         
-        # Penjelasan
+        # Penjelasan singkat
         with st.expander("📖 Tentang Rail Fence Cipher"):
             st.markdown("""
-            **Rail Fence Cipher** adalah metode transposisi yang menulis teks dalam pola zig-zag.
+            **Rail Fence Cipher** menulis teks dalam pola zig-zag di beberapa "rail".
             
-            **Cara kerja:**
-            1. Teks ditulis secara diagonal (zig-zag) pada sejumlah "rail"
-            2. Ciphertext dibaca per baris secara horizontal
-            3. Untuk dekripsi, dibangun kembali pola zig-zag
-            
-            **Contoh visual (3 rail):**
-            ```
-            H   O   R   L
-              E   L   W   D
-                L   O   
-            ```
-            Dibaca sebagai: HOREL OLWLD
+            **Hasil akan dikonversi menjadi simbol:**
+            - Setiap huruf hasil enkripsi diubah ke simbol sesuai tabel
+            - Contoh: A → ●, B → △, dst.
             """)
         
         # Input pengguna
@@ -269,123 +338,95 @@ def main():
         with col1:
             rf_text_input = st.text_area("Masukkan teks:", height=100, 
                                          placeholder="Masukkan teks di sini...", key="rf_input")
+            show_original_rf = st.checkbox("Tampilkan teks asli", value=True, key="rf_original")
         
         with col2:
             rf_mode = st.radio("Pilih mode:", ["Enkripsi", "Dekripsi"], key="rf_mode")
             num_rails = st.slider("Pilih jumlah rail:", 
-                                 min_value=2, max_value=10, value=3)
+                                 min_value=2, max_value=10, value=3, key="rf_rails")
             
-            if st.button("🚀 Proses Rail Fence Cipher", use_container_width=True):
+            convert_symbols_rf = st.checkbox("Konversi hasil ke simbol", value=True, key="rf_symbols")
+            
+            if st.button("🚀 Proses Rail Fence Cipher", use_container_width=True, key="rf_button"):
                 if rf_text_input:
                     if rf_mode == "Enkripsi":
-                        result = rail_fence_encrypt(rf_text_input, num_rails)
+                        # Proses Rail Fence Cipher
+                        rf_result = rail_fence_encrypt(rf_text_input.upper(), num_rails)
+                        
+                        # Konversi ke simbol jika dipilih
+                        if convert_symbols_rf:
+                            final_result = text_to_symbols(rf_result)
+                        else:
+                            final_result = rf_result
+                        
                         st.success("✅ Enkripsi Berhasil!")
                     else:
-                        result = rail_fence_decrypt(rf_text_input, num_rails)
+                        # Untuk dekripsi
+                        if convert_symbols_rf:
+                            # Coba konversi dari simbol ke teks
+                            try:
+                                text_from_symbols = symbols_to_text(rf_text_input)
+                                final_result = rail_fence_decrypt(text_from_symbols, num_rails)
+                            except:
+                                st.error("Gagal mengonversi simbol. Pastikan format simbol benar.")
+                                return
+                        else:
+                            final_result = rail_fence_decrypt(rf_text_input, num_rails)
+                        
                         st.success("✅ Dekripsi Berhasil!")
                     
                     # Tampilkan hasil
-                    st.subheader("Hasil:")
-                    st.code(result, language="text")
+                    col_result1, col_result2 = st.columns(2)
+                    
+                    with col_result1:
+                        st.subheader("Hasil:")
+                        st.code(final_result, language="text")
+                    
+                    with col_result2:
+                        if show_original_rf and rf_mode == "Enkripsi":
+                            st.subheader("Teks Asli:")
+                            st.info(rf_text_input)
+                        
+                        if convert_symbols_rf:
+                            st.subheader("Keterangan:")
+                            st.caption("Hasil telah dikonversi ke dalam bentuk simbol")
+                            
+                            # Tampilkan pola rail
+                            if rf_mode == "Enkripsi" and len(rf_text_input) <= 30:
+                                st.subheader("Pola Rail:")
+                                rails_display = []
+                                for i in range(num_rails):
+                                    rails_display.append([])
+                                
+                                rail_idx = 0
+                                direction = 1
+                                for char in rf_text_input.upper():
+                                    for j in range(num_rails):
+                                        if j == rail_idx:
+                                            rails_display[j].append(char)
+                                        else:
+                                            rails_display[j].append(".")
+                                    rail_idx += direction
+                                    if rail_idx == 0 or rail_idx == num_rails - 1:
+                                        direction = -direction
+                                
+                                for i in range(num_rails):
+                                    st.text(f"Rail {i+1}: {' '.join(rails_display[i])}")
+                
                 else:
                     st.warning("⚠️ Silakan masukkan teks terlebih dahulu!")
         
         # Contoh
-        with st.expander("📋 Contoh Rail Fence Cipher"):
+        with st.expander("📋 Contoh Rail Fence Cipher dengan Simbol"):
             example_text = "RAILFENCE"
             example_encrypted = rail_fence_encrypt(example_text, 3)
-            example_decrypted = rail_fence_decrypt(example_encrypted, 3)
+            example_symbols = text_to_symbols(example_encrypted)
             
             st.write(f"**Plaintext:** {example_text}")
             st.write(f"**Jumlah rail:** 3")
-            st.write(f"**Ciphertext:** {example_encrypted}")
-            st.write(f"**Dekripsi kembali:** {example_decrypted}")
-    
-    # ========== HALAMAN TABEL SIMBOL ==========
-    elif app_mode == "Tabel Simbol":
-        st.header("Tabel Simbol Kriptografi")
-        st.markdown("Tabel konversi huruf ke simbol berdasarkan materi kriptografi")
-        
-        # Buat dan tampilkan tabel
-        symbol_df = create_symbol_table()
-        
-        # Tampilkan dengan styling
-        st.dataframe(
-            symbol_df,
-            use_container_width=True,
-            hide_index=True,
-            column_config={
-                "Alphabet": st.column_config.TextColumn("Huruf", width="small"),
-                "Simbol": st.column_config.TextColumn("Simbol", width="medium"),
-                "Deskripsi": st.column_config.TextColumn("Deskripsi", width="large")
-            }
-        )
-        
-        # Opsi pencarian
-        st.subheader("Cari Simbol")
-        search_option = st.radio("Cari berdasarkan:", ["Huruf", "Deskripsi"])
-        
-        if search_option == "Huruf":
-            search_letter = st.text_input("Masukkan huruf (A-Z):", max_chars=1).upper()
-            if search_letter and search_letter in symbol_df['Alphabet'].values:
-                result = symbol_df[symbol_df['Alphabet'] == search_letter].iloc[0]
-                st.info(f"**{result['Alphabet']}** → **{result['Simbol']}** : {result['Deskripsi']}")
-            elif search_letter:
-                st.warning(f"Huruf '{search_letter}' tidak ditemukan dalam tabel.")
-        else:
-            search_desc = st.text_input("Masukkan kata kunci deskripsi:")
-            if search_desc:
-                filtered = symbol_df[symbol_df['Deskripsi'].str.contains(search_desc, case=False, na=False)]
-                if not filtered.empty:
-                    for _, row in filtered.iterrows():
-                        st.write(f"**{row['Alphabet']}** → **{row['Simbol']}** : {row['Deskripsi']}")
-                else:
-                    st.warning(f"Tidak ditemukan deskripsi dengan kata kunci '{search_desc}'.")
-    
-    # ========== HALAMAN TENTANG ==========
-    elif app_mode == "Tentang":
-        st.header("Tentang Aplikasi")
-        
-        st.markdown("""
-        ### 📚 Informasi Aplikasi
-        
-        **Nama:** Aplikasi Kriptografi - Rail Cipher & Caesar Cipher  
-        **Pembuat:** Fadina Laila Hidayati  
-        **NIM:** 24.83.1109  
-        **Mata Kuliah:** Kriptografi
-        
-        ### 🔐 Fitur Aplikasi
-        
-        1. **Caesar Cipher**
-           - Enkripsi dan dekripsi teks
-           - Kustomisasi key (nilai pergeseran)
-           - Contoh implementasi
-        
-        2. **Rail Fence Cipher**
-           - Enkripsi dan dekripsi teks
-           - Kustomisasi jumlah rail
-           - Contoh implementasi
-        
-        3. **Tabel Simbol**
-           - Tabel lengkap konversi huruf ke simbol
-           - Fungsi pencarian
-           - Berdasarkan materi kriptografi
-        
-        ### 🛠️ Teknologi
-        
-        - **Python 3.x**
-        - **Streamlit** untuk antarmuka web
-        - **Pandas** untuk manipulasi data
-        
-        ### 📖 Referensi
-        
-        - Materi Kriptografi
-        - Rail Cipher & Caesar Cipher
-        - Tabel Simbol Kriptografi
-        """)
-        
-        st.markdown("---")
-        st.caption("© 2024 Aplikasi Kriptografi - Dibuat untuk pembelajaran")
+            st.write(f"**Ciphertext (huruf):** {example_encrypted}")
+            st.write(f"**Ciphertext (simbol):** {example_symbols}")
+            st.write(f"**Dekripsi kembali:** {rail_fence_decrypt(example_encrypted, 3)}")
 
 # ========== MENJALANKAN APLIKASI ==========
 if __name__ == "__main__":
