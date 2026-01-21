@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 
@@ -157,12 +156,6 @@ def geo_symbols_to_text(symbols_text):
         elif symbol == '△' and i + 1 < len(symbols) and symbols[i+1] == '△':
             symbol = '△△'
             i += 1
-        elif symbol == '▽' and i + 1 < len(symbols) and symbols[i+1] == '▽':
-            symbol = '▽▽'
-            i += 1
-        elif symbol == '◆' and i + 1 < len(symbols) and symbols[i+1] == '◆':
-            symbol = '◆◆'
-            i += 1
         
         if symbol in GEO_SYMBOLS['SYMBOL_TO_LETTER']:
             result += GEO_SYMBOLS['SYMBOL_TO_LETTER'][symbol]
@@ -297,6 +290,47 @@ def decrypt_combination_geo(cipher_symbols, caesar_key_symbol, rail_key_symbol):
     
     return rail_text, caesar_text, plaintext
 
+def display_rail_visualization(text, rails):
+    """Menampilkan visualisasi Rail Fence pattern"""
+    if rails <= 1:
+        return
+    
+    # Buat grid untuk visualisasi
+    grid = []
+    for _ in range(rails):
+        grid.append(['.'] * len(text))
+    
+    # Isi grid
+    rail = 0
+    direction = 1
+    
+    for i, char in enumerate(text):
+        grid[rail][i] = char
+        rail += direction
+        
+        if rail == 0 or rail == rails - 1:
+            direction = -direction
+    
+    # Tampilkan
+    st.markdown("**Visualisasi Rail Pattern:**")
+    for i in range(rails):
+        rail_display = " ".join(grid[i])
+        st.text(f"Rail {i+1}: {rail_display}")
+
+def display_symbol_conversion(text):
+    """Menampilkan konversi huruf ke simbol"""
+    st.markdown("**Konversi per huruf:**")
+    
+    conversion_text = ""
+    for char in text.upper():
+        if char in GEO_SYMBOLS['LETTER_SYMBOLS']:
+            symbol = GEO_SYMBOLS['LETTER_SYMBOLS'][char]
+            conversion_text += f"{char} → {symbol}  |  "
+        elif char == " ":
+            conversion_text += "spasi → /  |  "
+    
+    st.write(conversion_text)
+
 # ========== ANTARMUKA STREAMLIT ==========
 
 def main():
@@ -396,9 +430,6 @@ def main():
             3. Dapatkan kembali teks asli
             """)
             
-            st.image("https://cdn.pixabay.com/photo/2017/08/24/03/41/map-2675823_1280.png", 
-                    caption="Peta Kriptografi", use_column_width=True)
-        
         with col2:
             st.markdown("""
             ### 🎯 Fitur Utama
@@ -424,7 +455,7 @@ def main():
     
     # ========== HALAMAN ENKRIPSI ==========
     elif app_mode == "Enkripsi":
-        st.markdown('<h2 class="sub-header">🔒 Enkripsi Pesan</h2>', unsafe_allow_html=True>
+        st.markdown('<h2 class="sub-header">🔒 Enkripsi Pesan</h2>', unsafe_allow_html=True)
         
         # Input utama
         col_input, col_keys = st.columns([2, 1])
@@ -445,7 +476,7 @@ def main():
             caesar_key = st.selectbox(
                 "**Kunci Caesar (simbol geografi):**",
                 options=caesar_options,
-                format_func=lambda x: f"{x} ({GEO_SYMBOLS['CAESAR_KEYS'][x]})",
+                format_func=lambda x: f"{x} (shift {GEO_SYMBOLS['CAESAR_KEYS'][x]})",
                 help="Pilih simbol geografi sebagai kunci pergeseran"
             )
             
@@ -473,7 +504,7 @@ def main():
                         
                         # Tampilkan hasil
                         st.markdown("---")
-                        st.markdown('<h3 class="sub-header">🗺️ Peta Rahasia Anda</h3>', unsafe_allow_html=True>
+                        st.markdown('<h3 class="sub-header">🗺️ Peta Rahasia Anda</h3>', unsafe_allow_html=True)
                         
                         # Hasil akhir dalam simbol
                         col_final, col_info = st.columns([2, 1])
@@ -496,7 +527,7 @@ def main():
                         
                         # Proses bertahap
                         st.markdown("---")
-                        st.markdown('<h4 class="sub-header">📊 Proses Enkripsi</h4>', unsafe_allow_html=True>
+                        st.markdown('<h4 class="sub-header">📊 Proses Enkripsi</h4>', unsafe_allow_html=True)
                         
                         tab1, tab2, tab3 = st.tabs(["1️⃣ Caesar Cipher", "2️⃣ Rail Fence", "3️⃣ Simbol Geografi"])
                         
@@ -524,7 +555,7 @@ def main():
     
     # ========== HALAMAN DEKRIPSI ==========
     elif app_mode == "Dekripsi":
-        st.markdown('<h2 class="sub-header">🔓 Dekripsi Peta Rahasia</h2>', unsafe_allow_html=True>
+        st.markdown('<h2 class="sub-header">🔓 Dekripsi Peta Rahasia</h2>', unsafe_allow_html=True)
         
         # Input untuk dekripsi
         col_input, col_keys = st.columns([2, 1])
@@ -572,7 +603,7 @@ def main():
                         
                         # Tampilkan hasil
                         st.markdown("---")
-                        st.markdown('<h3 class="sub-header">📜 Pesan Asli</h3>', unsafe_allow_html=True>
+                        st.markdown('<h3 class="sub-header">📜 Pesan Asli</h3>', unsafe_allow_html=True)
                         
                         col_result, col_process = st.columns([1, 2])
                         
@@ -600,7 +631,7 @@ def main():
     
     # ========== HALAMAN PANDUAN SIMBOL ==========
     else:
-        st.markdown('<h2 class="sub-header">📚 Panduan Simbol Geografi</h2>', unsafe_allow_html=True>
+        st.markdown('<h2 class="sub-header">📚 Panduan Simbol Geografi</h2>', unsafe_allow_html=True)
         
         tab_guide1, tab_guide2, tab_guide3 = st.tabs(["🗺️ Simbol Geografi", "🛣️ Simbol Jalan", "🔤 Huruf ke Simbol"])
         
@@ -679,47 +710,6 @@ def main():
             
             letter_df = pd.DataFrame(letter_data)
             st.dataframe(letter_df, use_container_width=True, hide_index=True)
-
-def display_rail_visualization(text, rails):
-    """Menampilkan visualisasi Rail Fence pattern"""
-    if rails <= 1:
-        return
-    
-    # Buat grid untuk visualisasi
-    grid = []
-    for _ in range(rails):
-        grid.append(['.'] * len(text))
-    
-    # Isi grid
-    rail = 0
-    direction = 1
-    
-    for i, char in enumerate(text):
-        grid[rail][i] = char
-        rail += direction
-        
-        if rail == 0 or rail == rails - 1:
-            direction = -direction
-    
-    # Tampilkan
-    st.markdown("**Visualisasi Rail Pattern:**")
-    for i in range(rails):
-        rail_display = " ".join(grid[i])
-        st.text(f"Rail {i+1}: {rail_display}")
-
-def display_symbol_conversion(text):
-    """Menampilkan konversi huruf ke simbol"""
-    st.markdown("**Konversi per huruf:**")
-    
-    conversion_text = ""
-    for char in text.upper():
-        if char in GEO_SYMBOLS['LETTER_SYMBOLS']:
-            symbol = GEO_SYMBOLS['LETTER_SYMBOLS'][char]
-            conversion_text += f"{char} → {symbol}  |  "
-        elif char == " ":
-            conversion_text += "spasi → /  |  "
-    
-    st.write(conversion_text)
 
 # ========== MENJALANKAN APLIKASI ==========
 if __name__ == "__main__":
